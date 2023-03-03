@@ -36,22 +36,6 @@ function partidasIdentificar() {
 			return response;
 		}
 
-		let datePart = [];
-		const month = {
-			"jan": "ene",
-			"feb": "feb",
-			"mar": "mar",
-			"apr": "abr",
-			"may": "may",
-			"jun": "jun",
-			"jul": "jul",
-			"aug": "ago",
-			"sep": "sep",
-			"oct": "oct",
-			"nov": "nov",
-			"dec": "dic"
-		};
-
 		//Se itera por los registros del CSV
 		Logger.log("Inicia loop para array de la data del archivo CSV");
 		for (let x = 0; x <= csvData.length - 1; x++) {
@@ -66,42 +50,28 @@ function partidasIdentificar() {
 			let fechaPartidasCSV = csvData[x][4];
 			let usuarioPartidasSCV = csvData[x][5];
 
-			Logger.log("FechaCSV: " + fechaCSV);
-			Logger.log("valorCSV: " + valorCSV);
-			Logger.log("referenciaCSV: " + referenciaCSV);
-			Logger.log("nombreEmpresaCSV: " + nombreEmpresaCSV);
+			Logger.log("FechaCSV: " + fechaCSV + " valorCSV: " + valorCSV + " referenciaCSV: " + referenciaCSV + " nombreEmpresaCSV: " + nombreEmpresaCSV);
 
 			Logger.log("Inicia loop para array de la data del Sheet");
 			//Se itera por los registros del Sheet
 			for (let y = 0; y <= sheetValuesPartidas.length - 1; y++) {
 
-				//Cambiar formato de fecha y homologar de inglés a Español
-				let dateSheet = sheetValuesPartidas[y][0];
-				let dateFormater = Utilities.formatDate(dateSheet, "GMT-5", "dd-MMM-yyyy");
-				datePart = dateFormater.split("-");
-				let monthEnglish = datePart[1];
-				let nameMonthSpanish = month[monthEnglish.toLowerCase()];
-				dateSheet = dateFormater.replace(monthEnglish, nameMonthSpanish);
+				let dateSheetAux = sheetValuesPartidas[y][0];
 
-				//Reemplazar caracteres
+				//Cambiar formato de fecha
+				let dateSheet = Utilities.formatDate(dateSheetAux, Session.getScriptTimeZone(), "dd-MM-yyyy");
+
 				let valueSheet = sheetValuesPartidas[y][2]
-				//valueSheet = valueSheet.replace('$', '');
-				//valueSheet = valueSheet.replace('.', '');
-				//valueSheet = valueSheet.replace('.', '');
-				//valueSheet = valueSheet.replace(',', '.');
-
 				let referenciaSheet = sheetValuesPartidas[y][3];
 				let nombreEmpresaSheet = sheetValuesPartidas[y][5];
 
-				Logger.log("dateSheet: " + dateSheet);
-				Logger.log("valueSheet: " + valueSheet);
-				Logger.log("referenciaSheet: " + referenciaSheet);
-				Logger.log("nombreEmpresaSheet: " + nombreEmpresaSheet);
-
-				//Vaciar array que almacena las pastes de las fechas
-				datePart.splice(0, datePart.length);
+				Logger.log("\nFechaCSV" + fechaCSV + "  == FechaSheet" + dateSheet
+					+ "\nvalorCSV" + valorCSV + "== valueSheet" + valueSheet
+					+ "\nreferenciaCSV" + referenciaCSV + " == referenciaSheet" + referenciaSheet
+					+ "\nnombreEmpresaCSV" + nombreEmpresaCSV + " == nombreEmpresaSheet" + nombreEmpresaSheet);
 
 				if (fechaCSV == dateSheet && valorCSV == valueSheet && referenciaCSV == referenciaSheet && nombreEmpresaCSV == nombreEmpresaSheet) {
+
 					Logger.log("Se encontró coindidencia de referencias y de valor");
 					let fechaPartidas = sheetGoogle.getRange(y + 2, Params.UPDATE_PARTIDAS.COLUMN_SHEET_PARTIDAS_FECHA);
 					fechaPartidas.setValue(fechaPartidasCSV);
@@ -164,8 +134,21 @@ const searchFileCSV = () => {
 	const csvFolder = DriveApp.getFolderById(Params.UPDATE_PARTIDAS.CSV_FOLDER_PARTIDAS);
 
 	// Se busca Archivo CSV
-	const filePartidasCSV = `title contains '${Params.UPDATE_PARTIDAS.CSV_NAME}'`;
-	const files = csvFolder.searchFiles(filePartidasCSV);
+
+	//Fecha Actual
+	let newDate = new Date();
+	let dateSheetAux = Utilities.formatDate(newDate, Session.getScriptTimeZone(), "dd-MM-yyyy");
+	let date = dateSheetAux.replace(/-/g, "");
+
+	const nameFile = Params.UPDATE_PARTIDAS.CSV_NAME;
+	const filePartidasCSV = nameFile.concat(date);
+
+
+	Logger.log("filePartidasCSV: " + filePartidasCSV)
+
+	const files = csvFolder.getFilesByName(filePartidasCSV + ".csv")
+
+	//const files = csvFolder.searchFiles(filePartidasCSV);
 
 	// Se obtiene archivo y su contenido si existe alguno
 	if (files.hasNext()) {
